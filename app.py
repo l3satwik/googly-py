@@ -5,6 +5,10 @@ import json
 import requests
 from flask import Flask, request
 
+from googleapiclient.discovery import build
+import pprint
+
+
 app = Flask(__name__)
 
 
@@ -38,8 +42,13 @@ def webhook():
                     sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
+                    query = message_text
+                    results = google_search(query, my_api_key, my_cse_id, num=3)
+                    for result in results:
+                        final_message = result['title'] + "\n" + result['link']
+                        send_message(sender_id, final_message)
 
-                    send_message(sender_id, "got it, thanks!")
+                    #send_message(sender_id, "got it, thanks!")
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
@@ -80,6 +89,14 @@ def send_message(recipient_id, message_text):
 def log(message):  # simple wrapper for logging to stdout on heroku
     print str(message)
     sys.stdout.flush()
+
+my_api_key = "AIzaSyBFWDyQxIhkWgLrGLJm6UFbnZA-L7RMDHI"
+my_cse_id = "013738163460575588144:uc3-n4gxjxq"
+
+def google_search(search_term, api_key, cse_id, **kwargs):
+    service = build("customsearch", "v1", developerKey=api_key)
+    res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
+    return res['items']
 
 
 if __name__ == '__main__':
