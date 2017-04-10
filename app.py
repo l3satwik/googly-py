@@ -89,7 +89,6 @@ def send_message(recipient_id, result):
                             "default_action": {
                                 "type": "web_url",
                                 "url": result['link'],
-                                "messenger_extensions": true,
                                 "webview_height_ratio": "tall",
                             },
                             "buttons": [
