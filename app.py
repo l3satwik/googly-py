@@ -46,7 +46,7 @@ def webhook():
                     results = google_search(query, my_api_key, my_cse_id, num=3)
                     for result in results:
                         final_message = result['title'] + "\n" + result['link']
-                        send_message(sender_id, final_message)
+                        send_message(sender_id, result)
 
                     #send_message(sender_id, "got it, thanks!")
 
@@ -62,9 +62,9 @@ def webhook():
     return "ok", 200
 
 
-def send_message(recipient_id, message_text):
+def send_message(recipient_id, result):
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=result['title'] + "\n" + result['link']))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -77,7 +77,32 @@ def send_message(recipient_id, message_text):
             "id": recipient_id
         },
         "message": {
-            "text": message_text
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": result['title'],
+                            "image_url": result['pagemap']['cse_image'][0]['src'],
+                            "subtitle": result['snippet'],
+                            "default_action": {
+                                "type": "web_url",
+                                "url": result['link'],
+                                "messenger_extensions": true,
+                                "webview_height_ratio": "tall",
+                            },
+                            "buttons": [
+                                {
+                                    "type": "web_url",
+                                    "url": result['link'],
+                                    "title": result['title']
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
         }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
